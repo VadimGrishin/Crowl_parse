@@ -42,9 +42,11 @@ def request_to_hh(text):
 
         res += list(zip(res_title, res_href, res_salary))
           
-    for it in res:
-        print(it)
-    print(len(res))
+    
+    if res:
+        for it in res:
+            print(it)
+            print(len(res))
 
 
 search_text = input('Введите название вакансии: ')
