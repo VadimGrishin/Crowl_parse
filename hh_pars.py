@@ -46,7 +46,7 @@ def request_to_hh(text):
     if res:
         for it in res:
             print(it)
-            print(len(res))
+        print(len(res))
 
 
 search_text = input('Введите название вакансии: ')
