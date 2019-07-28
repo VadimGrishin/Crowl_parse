@@ -18,9 +18,13 @@ get_params = {
 
 
 def request_to_hh(text):
+    ''' Вывод зарплат по запросу text с hh.ru ''' 
+
     get_params.update({'text': text})
     session = requests.Session()
     res = []
+
+    # анализируем первые 3 страницы
     for i in range(3):
         get_params.update({'page': i})
         req = session.get(base_url, headers=headers, params=get_params)
@@ -37,6 +41,7 @@ def request_to_hh(text):
         res_href = [html.fromstring(etree.tostring(block)).xpath('//@href')[0] for block in blocks]
 
         res += list(zip(res_title, res_href, res_salary))
+          
     for it in res:
         print(it)
     print(len(res))
