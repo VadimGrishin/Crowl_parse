@@ -1,10 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 
-# параметры для эмуляции браузера
-headers = {'accept': '*/*',
-           'user-agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3866.0 Safari/537.36'}
-
 base_url = "https://news.yandex.ru/Moscow_and_Moscow_Oblast/index.html"
 
 def request_to_yn():
