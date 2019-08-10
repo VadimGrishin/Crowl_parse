@@ -32,9 +32,9 @@ for i in range(len(elems)):
 
     it = elems[i]
 
-    x_from = it.find_element_by_xpath('//span[contains(@class,"ll-crpt")]').text
-    x_subj = it.find_element_by_xpath('//span[contains(@class,"llc__subject")]').text
-    x_time = it.find_element_by_xpath('//div[@class="llc__item llc__item_date"]').text
+    x_from = it.find_element_by_xpath('.//span[contains(@class,"ll-crpt")]').text
+    x_subj = it.find_element_by_xpath('.//span[contains(@class,"llc__subject")]').text
+    x_time = it.find_element_by_xpath('.//div[@class="llc__item llc__item_date"]').text
 
     it.click()
 
