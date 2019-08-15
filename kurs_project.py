@@ -33,4 +33,39 @@ import requests
 from lxml import html
 import re
  
+
+# ---------------------------------------------------------------------------------
+# Парсинг договоров
+base_url = "https://www.np-sr.ru/ru/regulation/joining/standardcontracts/index.htm"
+req = requests.get(base_url)
+
+#		Основная страница
+contr_types = html.fromstring(req.text).xpath('//a[@class="p_link"]/@href')
+contr_types_titles = html.fromstring(req.text).xpath('//div[@class="border-content-box__text text-c-base"]/text()')
+
+n = 0
+i = 0
+for contr_type in contr_types:
+
+    req = requests.get(contr_type)
+    contrs = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  border-content-box--brown border-content-box--hover flex flex--a-center flex--j-between typography"]//@href')
+    contr_titles = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  border-content-box--brown border-content-box--hover flex flex--a-center flex--j-between typography"]/div[@class="border-content-box__text text-c-base"]/text()')
+
+    j = 0
+    print(contr_types_titles[n])
+    for contr in contrs:
+        i += 1
+		
+        req_contr_doc = requests.get(contr)
+        contr_doc = html.fromstring(req_contr_doc.text).xpath('//a[@class="doc__link"]/@href')
+        print(f'{i}) {contr} {contr_titles[j]}')
+        print(f'   {contr_doc[0].replace("https://www.np-sr.ru/sites/default/files/sr_regulation/standcont/","").replace("/", "")}')
+      
+        j += 1
+		
+    n += 1  
+  
+# ---------------------------------------------------------------------------------
+# Парсинг регламентов
+	      
 # to be continued...
