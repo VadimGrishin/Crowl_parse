@@ -46,7 +46,7 @@ contr_types_titles = html.fromstring(req.text).xpath('//div[@class="border-conte
 n = 0
 i = 0
 for contr_type in contr_types:
-
+    # 		тематическая страница
     req = requests.get(contr_type)
     contrs = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  border-content-box--brown border-content-box--hover flex flex--a-center flex--j-between typography"]//@href')
     contr_titles = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  border-content-box--brown border-content-box--hover flex flex--a-center flex--j-between typography"]/div[@class="border-content-box__text text-c-base"]/text()')
@@ -55,7 +55,7 @@ for contr_type in contr_types:
     print(contr_types_titles[n])
     for contr in contrs:
         i += 1
-		
+	# 		договор	
         req_contr_doc = requests.get(contr)
         contr_doc = html.fromstring(req_contr_doc.text).xpath('//a[@class="doc__link"]/@href')
         print(f'{i}) {contr} {contr_titles[j]}')
