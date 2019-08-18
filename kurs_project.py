@@ -31,7 +31,6 @@ https://www.np-sr.ru/ru/regulation/joining/reglaments/index.htm (основна�
 from pymongo import MongoClient
 import requests
 from lxml import html
-import re
 
 
 def save_doc(href, file_name):
@@ -48,73 +47,122 @@ client = MongoClient('mongodb://127.0.0.1:27017')
 
 db = client['np_sr_db']
 std_contracts = db.std_contracts
+regulations = db.regulations
 
-# ---------------------------------------------------------------------------------
-# Парсинг договоров
-base_url = "https://www.np-sr.ru/ru/regulation/joining/standardcontracts/index.htm"
-req = requests.get(base_url)
 
-#  Основная страница
-contr_types = html.fromstring(req.text).xpath('//a[@class="p_link"]/@href')
-contr_types_titles = html.fromstring(req.text).xpath('//div[@class="border-content-box__text text-c-base"]/text()')
+def contracts_parse():
+    # Парсинг договоров
+    base_url = "https://www.np-sr.ru/ru/regulation/joining/standardcontracts/index.htm"
+    req = requests.get(base_url)
 
-n = 0
-i = 0
-for contr_type in contr_types:
-    # 		тематическая страница
-    req = requests.get(contr_type)
-    contrs = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  '
-                                             'border-content-box--brown border-content-box--hover flex flex--a-center '
-                                             'flex--j-between typography"]//@href')
-    contr_titles = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  '
-                                                   'border-content-box--brown border-content-box--hover '
-                                                   'flex flex--a-center flex--j-between typography"]'
-                                                   '/div[@class="border-content-box__text text-c-base"]/text()')
+    #  Основная страница
+    contr_types = html.fromstring(req.text).xpath('//a[@class="p_link"]/@href')
+    contr_types_titles = html.fromstring(req.text).xpath('//div[@class="border-content-box__text text-c-base"]/text()')
 
-    ad_data = {
-        "contract_type": contr_type,
-        "contract_type_title": contr_types_titles[n],
-        "docs": []
-    }
-    if not list(std_contracts.find({"contract_type": contr_type})):
-        std_contracts.insert_one(ad_data)
+    n = 0
+    i = 0
+    for contr_type in contr_types:
+        # 		тематическая страница
+        req = requests.get(contr_type)
+        contrs = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  '
+                                                 'border-content-box--brown border-content-box--hover flex '
+                                                 'flex--a-center '
+                                                 'flex--j-between typography"]//@href')
+        contr_titles = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  '
+                                                       'border-content-box--brown border-content-box--hover '
+                                                       'flex flex--a-center flex--j-between typography"]'
+                                                       '/div[@class="border-content-box__text text-c-base"]/text()')
 
-    j = 0
-    print(contr_types_titles[n])
-    for contr in contrs:
+        ad_data = {
+            "contract_type": contr_type,
+            "contract_type_title": contr_types_titles[n].strip(),
+            "docs": []
+        }
+        if not list(std_contracts.find({"contract_type": contr_type})):
+            std_contracts.insert_one(ad_data)
+
+        j = 0
+        print(contr_types_titles[n])
+        for contr in contrs:
+            i += 1
+            #  договор
+            req_contr_doc = requests.get(contr)
+            contr_doc = html.fromstring(req_contr_doc.text).xpath('//a[@class="doc__link"]/@href')
+            print(f'{i}) {contr} {contr_titles[j]}')
+
+            doc_name = contr_doc[0].replace("https://www.np-sr.ru/sites/default/files/sr_regulation/standcont/",
+                                            "").replace("/", "")
+
+            if save_doc(contr_doc[0], 'standards/' + doc_name):
+                print(f'{doc_name} сохранен на диске')
+
+            if not list(std_contracts.find({"docs.contr": contr})):
+
+                std_contracts.update_one({"contract_type": contr_type}, {'$push': {'docs': {
+                    'contr': contr,
+                    'contr_title': contr_titles[j].strip(),
+                    'doc_versions': [doc_name]
+                }}})
+
+            if not list(std_contracts.find({"docs.doc_versions": doc_name})):
+
+                std_contracts.update_one({"docs.contr": contr},
+                                         {'$push':
+                                             {'docs.$.doc_versions':
+                                                 doc_name
+                                              }
+                                          })
+
+            j += 1
+
+        n += 1
+
+
+def regulations_parse():
+    # Парсинг регламентов
+    base_url = "https://www.np-sr.ru/ru/regulation/joining/reglaments/index.htm"
+    req = requests.get(base_url)
+
+    #  Основная страница
+    reg_blocks = html.fromstring(req.text).xpath('//div[@class=" border-content-box border-content-box--offset  '
+                                                 'border-content-box--brown border-content-box--hover flex '
+                                                 'flex--a-center '
+                                                 'flex--j-between typography"]')
+    i = 0
+    for reg_block in reg_blocks:
+        #  регламент
+
+        reg_href = "https://www.np-sr.ru" + reg_block.xpath('.//a[@class="p_link"]/@href')[0]
+        reg_title = reg_block.xpath('.//div[@class="border-content-box__text text-c-base"]/text()')[0].strip()
+
         i += 1
-        #  договор
-        req_contr_doc = requests.get(contr)
-        contr_doc = html.fromstring(req_contr_doc.text).xpath('//a[@class="doc__link"]/@href')
-        print(f'{i}) {contr} {contr_titles[j]}')
+        print(f'{i}) {reg_href} {reg_title}')
 
-        doc_name = contr_doc[0].replace("https://www.np-sr.ru/sites/default/files/sr_regulation/standcont/",
-                                        "").replace("/", "")
+        req_regulation = requests.get(reg_href)
+        regul_doc = html.fromstring(req_regulation.text).xpath('//a[@class="doc__link"]/@href')
 
-        if save_doc(contr_doc[0], doc_name):
-            print(f'{doc_name} сохранен на диске')
+        regul_name = regul_doc[0].replace("https://www.np-sr.ru/sites/default/files/sr_regulation/reglaments/",
+                                          "").replace("/", "")
 
-        if not list(std_contracts.find({"docs.contr": contr})):
+        if save_doc(regul_doc[0], 'reglaments/' + regul_name):
+            print(f'{regul_name} сохранен на диске')
 
-            std_contracts.update_one({"contract_type": contr_type}, {'$push': {'docs': {
-                'contr': contr,
-                'doc_versions': [doc_name]
-            }}})
+        if not list(regulations.find({"regulation": reg_href})):
+            regulations.insert_one({
+                "regulation": reg_href,
+                "regulation_title": reg_title,
+                "regulation_versions": [regul_name]
+            })
 
-        if not list(std_contracts.find({"docs.doc_versions": doc_name})):
+        if not list(regulations.find({"regulation_versions": regul_name})):
 
-            std_contracts.update_one({"docs.contr": contr},
-                                     {'$push':
-                                         {'docs.$.doc_versions':
-                                             doc_name
-                                          }
-                                      })
+            regulations.update_one({"regulation": reg_href},
+                                   {'$push':
+                                    {'regulation_versions':
+                                        regul_name
+                                     }
+                                    })
 
-        j += 1
 
-    n += 1  
-
-# ---------------------------------------------------------------------------------
-# Парсинг регламентов
-
-# to be continued...
+contracts_parse()
+regulations_parse()
