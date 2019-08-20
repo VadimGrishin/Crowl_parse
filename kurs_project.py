@@ -33,6 +33,7 @@ https://www.np-sr.ru/ru/regulation/joining/reglaments/index.htm (основна�
 from pymongo import MongoClient
 import requests
 from lxml import html
+import os.path
 
 
 def save_doc(href, file_name):
