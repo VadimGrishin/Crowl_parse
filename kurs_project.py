@@ -37,9 +37,12 @@ from lxml import html
 
 def save_doc(href, file_name):
     """Сохранение бинарного файла по ссылке"""
+    file_name = 'data/' + file_name
+    if os.path.exists(file_name):
+        return False
 
     req1 = requests.get(href)
-    with open('data/' + file_name, 'wb') as out:
+    with open(file_name, 'wb') as out:
         out.write(req1.content)
 
     return True
